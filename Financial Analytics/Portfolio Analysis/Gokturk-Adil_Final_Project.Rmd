@@ -1,0 +1,220 @@
+---
+title: "Adil Gokturk - FIN654 Final Project: Portfolio Analysis"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+<style>
+.navbar{
+background-color: orange; 
+border-color: white;
+}
+</style>
+```{r setup, include=FALSE}
+setwd("/Users/HAG/Desktop/Spring2020/FIN654/Project")
+getwd()
+library(flexdashboard)
+library(quantmod)
+library(ggplot2)
+library(tidyr)
+library(plotly)
+library(PerformanceAnalytics)
+library(fPortfolio)
+library(knitr)
+#??quantmod
+# Download tickers 
+# "MSFT" "AMZN" "AAPL" "GOOG" "FB"   "WMT"  "COST" "MCD"  "YUM"  "SYY" 
+getSymbols(c("MSFT", "AMZN", "AAPL","GOOG","FB", "WMT","COST","MCD","YUM","SYY"), from = "2015-1-1", to = "2020-3-1")
+
+
+head(MSFT)
+MSFTmonthly <- monthlyReturn((MSFT$MSFT.Adjusted))
+AMZNmonthly <- monthlyReturn((AMZN$AMZN.Adjusted))
+AAPLmonthly <- monthlyReturn((AAPL$AAPL.Adjusted))
+GOOGmonthly <- monthlyReturn((GOOG$GOOG.Adjusted))
+FBmonthly <- monthlyReturn((FB$FB.Adjusted))
+WMTmonthly <- monthlyReturn((WMT$WMT.Adjusted))
+COSTmonthly <- monthlyReturn((COST$COST.Adjusted))
+MCDmonthly <- monthlyReturn((MCD$MCD.Adjusted))
+YUMmonthly <- monthlyReturn((YUM$YUM.Adjusted)) # YUM! Brands: KFC, Taco Bell, and Pizza Hut
+SYYmonthly <- monthlyReturn((SYY$SYY.Adjusted)) # A major food distributor.
+head(MSFTmonthly)
+head(AMZNmonthly)
+head(COSTmonthly)
+ALLreturn <- cbind(MSFTmonthly, AMZNmonthly, AAPLmonthly,GOOGmonthly, FBmonthly, WMTmonthly, COSTmonthly, MCDmonthly, YUMmonthly, SYYmonthly)
+head(ALLreturn)
+str(ALLreturn)
+# change the variable names
+colnames(ALLreturn) <- c("Microsoft", "Amazon", "Apple","Alphabet","Facebook", "Walmart","Costco","McDonald","YUM Brands","Sysco")
+########################################
+# convert xts to TimeSeries opject 
+as.timeSeries(ALLreturn) -> mytimeSeries
+head(mytimeSeries) # GMT definer at the begining
+
+
+### Portfolio Frontier
+# define portfolio specification as a function
+portfolioSpec() -> myspec
+
+# define number of portfolio frontiers =200 instead of 50 points
+200 -> setNFrontierPoints(myspec)
+
+# SET risk free rate HERE =1.5%/12 =montly return, 
+# weeklyReturn = 1.5% / 52
+#portfolioSpec() -> rf
+
+#0.015/12=0.00125
+0.00125 -> setRiskFreeRate(myspec)
+
+# let's check the number of frontiers=400
+myspec
+
+# let's built poerfolio frontier
+portfolioFrontier(data = mytimeSeries, spec = myspec) -> myFrontier
+
+# We need coordinates of the portfolio
+frontierPoints(myFrontier) -> myPoints
+getWeights(myFrontier) -> myWeights
+
+# Let's chect the new objects
+# Turn of the Scientific Format
+options(scipen = 100) # scipen scientific penalty = 100 if number is 100 digits penalize it
+head(myPoints)
+head(myWeights)
+tail(myPoints)
+tail(myWeights)
+
+# combine points and weight
+cbind(myPoints, myWeights) -> combined
+# (tail(combined) *100)  %>% round(2) # convert % with 2 decimal
+
+# PLot the combined in SECOND PAGE
+# convert to DF
+as.data.frame(combined) -> combined
+str(combined)
+#View(combined)
+head(combined)
+tail(combined)
+
+# PLOT 3th page
+(decision <- combined[63,] %>% round(6))
+str(decision)
+StockValues <- c(decision[1:2],(decision[3:12]*1000000))
+(result <- rbind(decision,StockValues))
+#View(result)
+round(result,2) -> result
+row.names(result) <- c("Frontier 63", "Weighted Portfolio Value")
+
+
+#############################################
+# convert xts objects into  a timeSeries to apply portfolio optimization
+# use ggplot to plot, we need to convert core data to df, index is not a VARIABLE
+ALLreturnDF <- data.frame(index(ALLreturn), coredata(ALLreturn))
+head(ALLreturnDF)
+"DATE"-> colnames(ALLreturnDF)[1]
+
+# wider to longer format to use ggplot2, swith DATE to pivot_longer by using tidyr
+ALLreturnPLOT <- pivot_longer(data = ALLreturnDF, -DATE, names_to = "STOCKS", values_to = "MONTLY.RETURN")
+head(ALLreturnPLOT)
+#View(ALLreturnPLOT)
+round(ALLreturnPLOT$MONTLY.RETURN, 4) -> ALLreturnPLOT$MONTLY.RETURN
+
+# WEALTH INDICIES
+# "MSFT" "AMZN" "AAPL" "GOOG" "FB"   "WMT"  "COST" "MCD"  "YUM"  "SYY" 
+MSFTwi <- Return.portfolio(MSFTmonthly, wealth.index = TRUE)
+AMZNwi <- Return.portfolio(AMZNmonthly, wealth.index = TRUE)
+AAPLwi <- Return.portfolio(AAPLmonthly, wealth.index = TRUE)
+GOOGwi <- Return.portfolio(GOOGmonthly, wealth.index = TRUE)
+FBwi <- Return.portfolio(FBmonthly, wealth.index = TRUE)
+WMTwi <- Return.portfolio(WMTmonthly, wealth.index = TRUE)
+COSTwi <- Return.portfolio(COSTmonthly, wealth.index = TRUE)
+MCDwi <- Return.portfolio(MCDmonthly, wealth.index = TRUE)
+YUMwi <- Return.portfolio(YUMmonthly, wealth.index = TRUE)
+SYYwi <- Return.portfolio(SYYmonthly, wealth.index = TRUE)
+head(COSTwi)
+ALLwi <- cbind(MSFTwi,AMZNwi, AAPLwi,GOOGwi, FBwi, WMTwi, COSTwi, MCDwi, YUMwi, SYYwi)
+
+head(ALLwi)
+tail(ALLwi)
+# change the variable names
+colnames(ALLwi) <- c("Microsoft", "Amazon", "Apple","Alphabet","Facebook", "Walmart","Costco","McDonald","YUM Brands","Sysco")
+
+# convert xts objects into  a timeSeries to apply portfolio optimization
+# use ggplot to plot, we need to convert core data to df, index is not a VARIABLE
+ALLwiDF <- data.frame(index(ALLwi), coredata(ALLwi))
+# View(ALLwiDF)
+"DATE"-> colnames(ALLwiDF)[1]
+
+# wider to longer format to use ggplot2, swith DATE to pivot_longer by using tidyr
+# opposite is pivot_wider()
+ALLwiPLOT <- pivot_longer(data = ALLwiDF, -DATE, names_to = "STOCKS", values_to = "WEALTH.INDEX")
+head(ALLwiPLOT)
+tail(ALLwiPLOT)
+round(ALLwiPLOT[,3],4) -> ALLwiPLOT[,3] # round to 4 digits
+
+```
+TIME SERIES DATA
+=======================================================================
+Row {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### monthly Returns
+
+```{r} 
+
+returnPLOT <- ggplot(data = ALLreturnPLOT, aes(x = DATE, y = MONTLY.RETURN, color=STOCKS)) + geom_line()+facet_wrap(~STOCKS, nrow = 10) # add 10 different graphs and y intercept $1 to see changes of $1
+
+
+ggplotly(returnPLOT)
+
+```
+
+
+-----------------------------------------------------------------------
+
+### Wealth Indicies
+
+```{r}
+wiPLOT <- ggplot(data = ALLwiPLOT, aes(x = DATE, y = WEALTH.INDEX, color=STOCKS)) + geom_line()+facet_wrap(~STOCKS, nrow = 10)  + geom_hline(yintercept = 1, lty =2) # 10 different graphs
+
+
+
+ggplotly(wiPLOT)
+
+```
+
+
+FRONTIER OF PORTFOLIOS
+=======================================================================
+```{r}
+
+ggplot(data = combined, aes(x = targetRisk, y = targetReturn)) + geom_point() +xlab("Standart Deviation of Monthly Return ") +ylab("Expected Monthly Return") -> frontierPLOt
+
+# make it interactive
+ggplotly(frontierPLOt)
+
+
+
+```
+
+
+PORTFOLIO DECISION for $1,000,000 INVESTMENT
+=======================================================================
+```{r}
+
+
+kable(result)
+
+```
+```
+Portfolio Analysis:
+
+- Analyzed 10 stocks: Microsoft, Amazon, Apple, Alphabet, Facebook, Walmart, Costco, McDonald, YUM Brands and Sysco. 
+- Portfolio Value: US$1,000,000.00
+- Portfolio frontier 63 is relatively reasonable—uses  almost all stocks for the portfolio.
+Portfolio frontier 63 suggests with a 3% target risk and a 2% target return that the Weighted Portfolio Values for Microsoft is $54,358.00, for Amazon $51,627.00, for Apple $341.00, for Alphabet $69,096.00, for Facebook	$93,840.00, for Walmart $94,235.00, for Costco $0, for McDonald $322,426.00, for YUM brands $108,182.00 and for Sysco $205,894.00. 
+```
+
+
+
