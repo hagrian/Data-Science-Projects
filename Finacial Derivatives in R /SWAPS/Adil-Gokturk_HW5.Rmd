@@ -1,0 +1,38 @@
+---
+title: "FIN659 HW5 SWAPS"
+author: "Adil Gokturk"
+date: "2/22/2020"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(quantmod)
+library(ggplot2)
+library(jrvFinance)
+library(knitr)
+
+```
+```{r}
+setwd("/Users/HAG/Desktop/Spring2020/FIN659/Assignments/hw5")
+getwd()
+```
+
+```
+## Problem 1		
+Textbook Reference:		Section 7.5, pp. 165-167; Section 7.7, pp. 169-172
+
+				
+The first key principle to take away from this problem is that the swap rate at the outset of a contract is computed from the observed term structure of interest rates at that time, such that the initial value of the swap is zero to both parties involved. After the contract is initiated, however, the yield curve will change and the swap will have a positive value to one party and a negative value to the other - a zero-sum game. It should be observed that the floating rate is set at the beginning of each period, but paid at the end - thus, the first floating cash flow will be fixed at the outset of the swap. The second key principle to take away from this problem is to recognize that swaps can be valued in one of two ways: (i) as a portfolio of Forward Rate Agreements (FRAs), or (ii) as the difference in the prices of a floating-rate bond and a fixed-rate bond. A third key principle to note is that a corporate treasurer is likely to use an interest-rate swap such as this one to change the nature of a liability or an asset - instead of paying (or receiving) a fixed rate, the financial manager can pay (or receive) a floating rate.						
+						
+In a three-year interest rate swap, a financial institution agrees to pay a fixed rate per annum and to receive six-month LIBOR in return on a notional principal of $10 million with payments being exchanged every six months.						
+
+```
+```{r}
+
+```
+
+
+
+
+

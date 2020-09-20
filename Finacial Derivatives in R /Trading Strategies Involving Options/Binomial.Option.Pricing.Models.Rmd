@@ -1,0 +1,228 @@
+---
+title: "Binomial Option Pricing Models"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+<style>
+.navbar{
+background-color: orange; 
+border-color: white;
+}
+</style>
+```{r setup, include=FALSE}
+library(flexdashboard) # presentation package
+library(fOptions) # options package
+library(derivmkts) # options package
+
+# set the working directory and check it!
+setwd("~/Desktop/Spring2020/FIN659/Assignments/hw9")
+getwd()
+
+```
+
+Row {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Stock Tree
+
+```{r, results="hide"}
+# Notes
+# Black-Scholes uses continues time rather than discrete
+
+# The binomial (CRR--Cox-Ross-Rubenstein model) tree method is particularly appropriate when we're trying to price American options.
+
+# Black-Scholes-Merton Model
+# Black-Scholes-Merton is useful for pricing only European options.
+
+# But the CRR ( Cox-Ross-Rubenstein) also known as binomial tree
+# allows us to work backwards through a tree and modify 
+# the value at each node if the intrinsic value at that point is 
+# greater than the discounted expected payoff.
+
+# I used Week9 Asynchronous's example to test R packages accuracy 
+
+s=50 # Price of the underlying asset
+k=48 # 	Strike price
+v=0.30 # volatility -sigma
+r=0.01 # 	Annual continuously-compounded risk-free interest rate
+tt=0.50 # Time to maturity in years
+d=0 # Dividend yield, annualized, continuously-compounded
+
+
+
+# 
+# MODEL I
+# I used derivmkts R Library
+
+# Black Scholes Call option pricing model
+bscall(s, k, v, r, tt, d)
+
+#Black Scholes Put option pricing model
+bsput(s, k, v, r, tt, d)
+
+
+## return option prices for multiple  strikes prices!
+# very helpfull
+bsput(s, k=40:60, v, r, tt, d)
+
+# Black Scholes call/put option prices
+bscall(s, k, v, r, tt, d) # Black-Scholes call  price
+bsput(s, k, v, r, tt, d) #  Black-Scholes put  price
+
+# Binomial European CAL option pricing
+# I calculated w9 example's up and down values
+
+# Needs to Define UP and DOWN values
+(up <- exp(v*sqrt(tt/2))) # 1.1618
+(dn <- exp(-v*sqrt(tt/2))) # 0.8607
+
+# European CAL option
+binomopt(s, k, v, r, tt, d, nstep = 2, american = FALSE,
+         putopt = FALSE,specifyupdn = TRUE,
+         jarrowrudd = FALSE, up = up, dn = dn,
+         returntrees = FALSE,
+         returngreeks = FALSE)
+
+# European PUT option
+binomopt(s, k, v, r, tt, d, nstep = 2, american = FALSE,
+         putopt = TRUE,specifyupdn = TRUE,
+         jarrowrudd = FALSE, up = up, dn = dn,
+         returntrees = FALSE,
+         returngreeks = FALSE)
+
+# Binomial American (CRR "Cox-Ross-Rubenstein Model") CALL Option
+binomopt(s, k, v, r, tt, d, nstep = 2, american = TRUE,
+         putopt = FALSE,specifyupdn = TRUE,
+         jarrowrudd = FALSE, up = up, dn = dn,
+         returntrees = FALSE,
+         returngreeks = FALSE)
+
+# Binomial American PUT option pricing
+binomopt(s, k, v, r, tt, d, nstep = 2, american = TRUE,
+         putopt = TRUE,specifyupdn = TRUE,
+         jarrowrudd = FALSE, up = up, dn = dn,
+         returntrees = FALSE,
+         returngreeks = FALSE)
+
+
+
+
+# Let's plot the  American CAL option stock Tree
+# Again we use  binomial opion pricing (crr model)  
+# To plot different options manipulate "putop, american and crr" variables!
+binomplot(s, k, v, r, tt, d, nstep = 2,
+          putopt = FALSE, american = TRUE,
+          plotvalues = TRUE, plotarrows = TRUE, 
+          drawstrike = TRUE, pointsize = 4, ylimval = c(0,0),
+          saveplot = FALSE, saveplotfn = 'binomialplot.pfd',
+          crr = TRUE, jarrowrudd = FALSE,
+          titles = TRUE,
+          specifyupdn = TRUE,
+          up = up, dn = dn,
+          returnprice = FALSE,
+          logy = TRUE) # If TRUE, y-axis is plotted on a log scale
+
+```
+
+
+-----------------------------------------------------------------------
+
+### European and American CALL/PUT Option Trees
+
+```{r, results="hide"}
+## Second model
+## fOptions R package
+# The generalized Black-Scholes CALL Option Price
+# b is the annualized cost-of-carry rate
+# if no dividend b=r(Annual continuously-compounded risk-free interest rate)
+GBSOption(TypeFlag = "c", S = s, X = k, Time = tt,
+          r = r, b = r, sigma = v,
+          title = NULL, description = NULL)
+
+# The generalized Black-Scholes PUT Option Price
+# no dividend b=r
+GBSOption(TypeFlag = "p", S = s, X = k, Time = tt,
+          r = r, b = r, sigma = v,
+          title = NULL, description = NULL)@price
+
+# to compare multiple strike price for BS call or put option
+GBSOption(TypeFlag = "p", S = s, X = 40:48, Time = tt,
+          r = r, b = r, sigma = v,
+          title = NULL, description = NULL)@price
+
+# CRR ( Cox-Ross-Rubenstein) Binomial Option
+# European CALL option
+CRRBinomialTreeOption(TypeFlag = "ce", S = s, X = k,
+                      Time = tt,
+                      r = r, b = r,
+                      sigma = v,n = 2)@price
+
+# European PUT option
+CRRBinomialTreeOption(TypeFlag = "pe", S = s, X = k,
+                      Time = tt,
+                      r = r, b = r,
+                      sigma = v,n = 2)@price
+# American CALL option
+CRRBinomialTreeOption(TypeFlag = "ca", S = s, X = k,
+                      Time = tt,
+                      r = r, b = r,
+                      sigma = v,n = 2)@price
+# American PUT option
+CRRBinomialTreeOption(TypeFlag = "pa", S = s, X = k,
+                      Time = tt,
+                      r = r, b = r,
+                      sigma = v,n = 2)@price
+
+#########################################################
+### Binomial Option trees
+
+## European CALL Option Tree
+bintree <- BinomialTreeOption(TypeFlag = "ce", S = s, X = k,
+                              Time = tt,
+                              r = r, b = r,
+                              sigma = v,n = 2)
+# Plot the binomial tree option for European CALL Option
+BinomialTreePlot(BinomialTreeValues = bintree, dy = 1, 
+                 xlab = "Time Periods", 
+                 ylab = "Number of Steps", 
+                 main = "European Call Option Tree")
+
+
+### American CALL option 
+# CRR Binomialtree Plot for American CALL Option
+bintree <- BinomialTreeOption(TypeFlag = "ca", S = s, X = k,
+                              Time = tt,
+                              r = r, b = r,
+                              sigma = v,n = 2)
+# Plot the American CALL Option tree
+BinomialTreePlot(BinomialTreeValues = bintree, dy = 1, 
+                 xlab = "Time Periods", 
+                 ylab = "Number of Steps", 
+                 main = "American Call Option Tree")
+
+
+#  European PUT Option
+bintree <- BinomialTreeOption(TypeFlag = "pe", S = s, X = k,
+                              Time = tt,
+                              r = r, b = r,
+                              sigma = v,n = 2)
+#  Plot the European PUT Option Tree
+BinomialTreePlot(BinomialTreeValues = bintree, dy = 1, 
+                 xlab = "Time Periods", 
+                 ylab = "Number of Steps", 
+                 main = "European Put Option Tree")
+
+# American PUT Option 
+bintree <- BinomialTreeOption(TypeFlag = "pa", S = s, X = k,
+                              Time = tt,
+                              r = r, b = r,
+                              sigma = v,n = 2)
+# Plot the American PUT Option tree
+BinomialTreePlot(BinomialTreeValues = bintree, dy = 1, 
+                 xlab = "Time Periods", 
+                 ylab = "Number of Steps", 
+                 main = "American Put Option Tree")
+```
+
